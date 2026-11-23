@@ -1,0 +1,13 @@
+{
+  "RunSFC": false,
+  "RunRestoreHealth": false,
+  "RunComponentCleanup": true,
+  "CleanPrefetch": false,
+  "FlushDNS": true,
+  "CreateHTMLReport": true,
+  "VerboseLog": true,
+  "CleanDefenderCache": false,
+  "CleanEventLogs": false,
+  "CleanRestorePoints": false,
+  "KeepRestorePoints": 3
+}

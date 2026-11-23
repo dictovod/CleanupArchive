@@ -1,0 +1,9 @@
+/logs/*
+!/logs/README.txt
+/reports/*
+!/reports/README.txt
+/support/*
+!/support/README.txt
+/*.zip
+*.log
+*.jsonl

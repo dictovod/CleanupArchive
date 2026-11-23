@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CleanupArchive — Настройки</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 32px 16px 64px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .card {
+    background: #1e293b;
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    margin-bottom: 20px;
+  }
+  h1 { color: #38bdf8; margin: 0 0 4px; font-size: 24px; }
+  .sub { color: #94a3b8; font-size: 13px; margin-bottom: 24px; }
+  h2 { color: #93c5fd; font-size: 15px; margin: 0 0 16px; text-transform: uppercase; letter-spacing: .05em; }
+  .row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid #334155;
+  }
+  .row:last-child { border-bottom: none; }
+  .row .label { font-size: 15px; color: #f1f5f9; font-weight: 600; }
+  .row .desc { font-size: 13px; color: #94a3b8; margin-top: 4px; max-width: 480px; }
+  .warn-badge {
+    display: inline-block; background: #451a03; color: #fbbf24; border-radius: 6px;
+    padding: 1px 7px; font-size: 11px; margin-left: 8px; vertical-align: middle;
+  }
+  .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0; background: #334155;
+    border-radius: 999px; transition: .15s;
+  }
+  .slider::before {
+    content: ""; position: absolute; height: 20px; width: 20px; left: 3px; top: 3px;
+    background: #e2e8f0; border-radius: 50%; transition: .15s;
+  }
+  input:checked + .slider { background: #0ea5e9; }
+  input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+  input:disabled + .slider { opacity: .4; cursor: not-allowed; }
+  .num-input {
+    width: 64px; background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+    border-radius: 8px; padding: 6px 8px; font-size: 14px;
+  }
+  .num-input:disabled { opacity: .4; }
+  .btn {
+    border: none; border-radius: 10px; padding: 12px 20px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: .15s; font-family: inherit;
+  }
+  .btn-primary { background: #0ea5e9; color: #04121c; }
+  .btn-primary:hover { background: #38bdf8; }
+  .btn-secondary { background: #334155; color: #e2e8f0; }
+  .btn-secondary:hover { background: #475569; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .status { font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .status.ok { color: #4ade80; }
+  .status.err { color: #fca5a5; }
+  .hint { font-size: 12px; color: #64748b; margin-top: 10px; line-height: 1.5; }
+  .reports-list { list-style: none; margin: 0; padding: 0; }
+  .reports-list li {
+    display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #334155;
+    font-size: 14px;
+  }
+  .reports-list li:last-child { border-bottom: none; }
+  .reports-list a { color: #38bdf8; text-decoration: none; }
+  .reports-list a:hover { text-decoration: underline; }
+  .reports-meta { color: #64748b; font-size: 12px; }
+  .empty { color: #64748b; font-size: 13px; }
+  .badge { display: inline-block; background: #164e63; color: #67e8f9; border-radius: 6px; padding: 2px 8px; font-size: 12px; margin-left: 8px; }
+</style>
+
+<div class="wrap">
+  <div class="card">
+    <h1>CleanupArchive <span class="badge">MIT · open source</span></h1>
+    <div class="sub">Настройки утилиты обслуживания и очистки Windows — сохраняются в config.json рядом со скриптом.</div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="runBtn">▶ Запустить CleanupArchive</button>
+      <button class="btn btn-secondary" id="previewBtn">Только предпросмотр (-WhatIf)</button>
+    </div>
+    <div class="hint">
+      Обе кнопки открывают Cleanup.ps1 в отдельном окне PowerShell — с обычным запросом прав
+      администратора, предпросмотром и подтверждением. Этот веб-интерфейс сам ничего не удаляет,
+      он только редактирует config.json и запускает уже знакомый консольный сценарий.
+    </div>
+    <div class="status" id="launchStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Основные настройки</h2>
+    <div id="settingsRows"></div>
+
+    <div class="actions" style="margin-top:20px;">
+      <button class="btn btn-primary" id="saveBtn">Сохранить настройки</button>
+    </div>
+    <div class="status" id="saveStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Последние отчёты</h2>
+    <ul class="reports-list" id="reportsList"><li class="empty">Загрузка…</li></ul>
+  </div>
+</div>
+
+<script>
+  const FIELDS = [
+    { key: 'FlushDNS', label: 'Сброс кэша DNS', desc: 'Быстрая и безопасная операция, ничего не удаляет с диска.' },
+    { key: 'CleanDefenderCache', label: 'Кэш Windows Defender', desc: 'Опциональная очистка CacheManager. Защищённые Defender файлы безопасно пропускаются; защита не отключается.' },
+    { key: 'CleanEventLogs', label: 'Полностью очистить журналы событий', desc: 'Удаляет все события из выбранных каналов Event Viewer через wevtutil. Журнал Security всегда исключён.' },
+    { key: 'CleanPrefetch', label: 'Кэш Prefetch', desc: 'Windows пересоздаёт эти файлы сама; сразу после очистки возможен небольшой прирост времени первого запуска программ.' },
+    { key: 'RunSFC', label: 'Проверка системных файлов (SFC)', desc: 'sfc /scannow — может занять продолжительное время.', warn: 'долго' },
+    { key: 'RunRestoreHealth', label: 'DISM /RestoreHealth', desc: 'Может скачивать данные через Windows Update при обнаружении повреждений. Работает только если включена очистка хранилища компонентов ниже.', warn: 'долго' },
+    { key: 'RunComponentCleanup', label: 'Очистка хранилища компонентов (DISM)', desc: 'DISM /StartComponentCleanup — освобождает место от старых версий системных компонентов после обновлений.' },
+    { key: 'CreateHTMLReport', label: 'HTML-отчёт после очистки', desc: 'Сохраняется локально в reports\\, никуда не отправляется.' },
+    { key: 'VerboseLog', label: 'Подробный журнал (.jsonl)', desc: 'Больше деталей в структурированном логе — полезно для диагностики.' },
+    { key: 'CleanRestorePoints', label: 'Удалять старые точки восстановления', desc: 'Оставляет только последние N точек через официальный VSS API. По умолчанию выключено.', warn: 'внимательно' },
+  ];
+
+  let currentConfig = {};
+
+  function renderRows(cfg) {
+    const container = document.getElementById('settingsRows');
+    container.innerHTML = '';
+    FIELDS.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const warnBadge = f.warn ? `<span class="warn-badge">${f.warn}</span>` : '';
+      row.innerHTML = `
+        <div>
+          <div class="label">${f.label}${warnBadge}</div>
+          <div class="desc">${f.desc}</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" data-key="${f.key}" ${cfg[f.key] ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>`;
+      container.appendChild(row);
+    });
+
+    const keepRow = document.createElement('div');
+    keepRow.className = 'row';
+    keepRow.innerHTML = `
+      <div>
+        <div class="label">Сколько точек восстановления оставлять</div>
+        <div class="desc">Учитывается только при включённой опции выше.</div>
+      </div>
+      <input type="number" min="1" max="50" class="num-input" id="keepRestorePoints" value="${cfg.KeepRestorePoints ?? 3}">`;
+    container.appendChild(keepRow);
+
+    syncKeepEnabled();
+    container.querySelector('input[data-key="CleanRestorePoints"]').addEventListener('change', syncKeepEnabled);
+  }
+
+  function syncKeepEnabled() {
+    const cb = document.querySelector('input[data-key="CleanRestorePoints"]');
+    const num = document.getElementById('keepRestorePoints');
+    if (cb && num) num.disabled = !cb.checked;
+  }
+
+  function collectConfig() {
+    const cfg = {};
+    document.querySelectorAll('#settingsRows input[type="checkbox"]').forEach(el => {
+      cfg[el.dataset.key] = el.checked;
+    });
+    cfg.KeepRestorePoints = parseInt(document.getElementById('keepRestorePoints').value, 10) || 3;
+    return cfg;
+  }
+
+  async function loadConfig() {
+    try {
+      const res = await fetch('/api/config');
+      currentConfig = await res.json();
+      renderRows(currentConfig);
+    } catch (e) {
+      document.getElementById('settingsRows').innerHTML = '<div class="status err">Не удалось загрузить config.json: ' + e + '</div>';
+    }
+  }
+
+  async function saveConfig() {
+    const statusEl = document.getElementById('saveStatus');
+    statusEl.textContent = 'Сохраняю…';
+    statusEl.className = 'status';
+    try {
+      const body = JSON.stringify(collectConfig());
+      const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      const data = await res.json();
+      if (data.ok) {
+        statusEl.textContent = 'Сохранено ✓';
+        statusEl.className = 'status ok';
+      } else {
+        statusEl.textContent = 'Ошибка: ' + data.error;
+        statusEl.className = 'status err';
+      }
+    } catch (e) {
+      statusEl.textContent = 'Ошибка сохранения: ' + e;
+      statusEl.className = 'status err';
+    }
+  }
+
+  async function launch(path, label) {
+    const statusEl = document.getElementById('launchStatus');
+    statusEl.textContent = 'Запускаю…';
+    statusEl.className = 'status';
+    try {
+      const res = await fetch(path, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        statusEl.textContent = (data.message || (label + ' запущен(о).')) + ' Смотрите новое окно PowerShell.';
+        statusEl.className = 'status ok';
+      } else {
+        statusEl.textContent = 'Ошибка: ' + data.error;
+        statusEl.className = 'status err';
+      }
+    } catch (e) {
+      statusEl.textContent = 'Ошибка запуска: ' + e;
+      statusEl.className = 'status err';
+    }
+  }
+
+  async function loadReports() {
+    const list = document.getElementById('reportsList');
+    try {
+      const res = await fetch('/api/reports');
+      const items = await res.json();
+      if (!items.length) {
+        list.innerHTML = '<li class="empty">Отчётов пока нет — запустите очистку хотя бы раз.</li>';
+        return;
+      }
+      list.innerHTML = items.map(r =>
+        `<li><a href="/reports/${encodeURIComponent(r.name)}" target="_blank">${r.name}</a>
+         <span class="reports-meta">${r.modified} · ${r.sizeKb} КБ</span></li>`
+      ).join('');
+    } catch (e) {
+      list.innerHTML = '<li class="empty">Не удалось загрузить список отчётов.</li>';
+    }
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', saveConfig);
+  document.getElementById('runBtn').addEventListener('click', () => launch('/api/run', 'CleanupArchive'));
+  document.getElementById('previewBtn').addEventListener('click', () => launch('/api/preview', 'Предпросмотр'));
+
+  loadConfig();
+  loadReports();
+</script>
